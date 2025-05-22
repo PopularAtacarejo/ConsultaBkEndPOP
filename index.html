@@ -191,7 +191,7 @@
           <td>${p.bairro}</td>
           <td>${p.vaga}</td>
           <td>${new Date(p.data).toLocaleDateString()}</td>
-          <td><a href="https://github.com/PopularAtacarejo/VagasPopular/raw/main/curriculos/${p.arquivo}" target="_blank">Baixar</a></td>
+          <td><a href="${p.arquivo}" target="_blank">Baixar</a></td>
         `;
         tbody.appendChild(linha);
       });
@@ -306,7 +306,7 @@ async function atualizar() {
       <td>${p.bairro}</td>
       <td>${p.vaga}</td>
       <td>${new Date(p.data).toLocaleDateString()}</td>
-      <td><a href="https://github.com/PopularAtacarejo/VagasPopular/raw/main/curriculos/${p.arquivo}" target="_blank">Baixar</a></td>
+      <td><a href="${p.arquivo}" target="_blank">Baixar</a></td>
     `;
     tbody.appendChild(linha);
   });
