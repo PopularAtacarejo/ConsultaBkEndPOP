@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel de Consulta</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #ffffff, #d4f7dc);
+      margin: 0;
+      padding: 40px;
+    }
+    h2 {
+      text-align: center;
+      color: #dc3545;
+    }
+    .filtros {
+      max-width: 900px;
+      margin: 20px auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: space-between;
+    }
+    .filtros input, .filtros select, .filtros button {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 180px;
+    }
+    .filtros input:focus, .filtros select:focus {
+      border-color: red;
+      outline: none;
+    }
+    .filtros button {
+      background: #28a745;
+      color: white;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .filtros button:hover {
+      background: red;
+      animation: shake 0.4s;
+    }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background: #28a745;
+      color: white;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <h2>Painel de Consulta de Currículos</h2><div style='text-align:center; margin-top:10px;'><button id="exportBtn" onclick='exportarExcel()'>📁 Exportar para Excel</button>
+    <style>
+    #exportBtn {
+      background: #28a745;
+      color: #000;
+      border: none;
+      font-weight: bold;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #exportBtn:hover {
+      background: #28a745;
+      color: white;
+      transform: scale(1.05) rotate(-1deg);
+    }
+    </style></div>
+  <div class="filtros">
+    <input type="text" id="filtroCpf" placeholder="Filtrar por CPF" />
+    <input type="text" id="filtroTelefone" placeholder="Filtrar por Telefone" />
+    <input type="text" id="filtroCidade" placeholder="Filtrar por Cidade" />
+    <input type="text" id="filtroBairro" placeholder="Filtrar por Bairro" />
+    <select id="filtroVaga"><option value="">Carregando...</option>
+      <option value="">Todas as Vagas</option>
+      <option>AUXILIAR DE PADEIRO</option>
+      <option>AUXILIAR DE LIMPEZA</option>
+      <option>AUXILIAR DE T.I</option>
+      <option>AUXILIAR ADMINISTRATIVO</option>
+      <option>BALCONISTA DE AÇOUGUE</option>
+      <option>BALCONISTA DE PADARIA</option>
+      <option>EMBALADOR (A)</option>
+      <option>REPOSITOR (A)</option>
+      <option>OPERADOR (A) DE CAIXA</option>
+      <option>OPERADOR DE SUPERMERCADO</option>
+      <option>AUX. DE PREVENÇÃO E PERDA</option>
+    </select>
+    <select id="filtroPeriodo"><option value="">Todos os Períodos</option>
+      <option value="">Todos os Períodos</option>
+      <option value="7">Última Semana</option>
+      <option value="30">Último Mês</option>
+      <option value="60">Últimos 2 Meses</option>
+      <option value="90">Últimos 3 Meses</option>
+    </select>
+    
+    <input type="date" id="dataInicio" placeholder="Data Início" />
+    <input type="date" id="dataFim" placeholder="Data Fim" />
+    <button onclick="atualizar()">Atualizar</button>
+    
+  </div>
+
+  <table id="tabelaCurriculos">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>CPF</th>
+        <th>Telefone</th>
+        <th>Cidade</th>
+        <th>Bairro</th>
+        <th>Vaga</th>
+        <th>Data</th>
+        <th>Currículo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dados preenchidos dinamicamente -->
+    </tbody>
+  </table>
+
+  <script>
+    async function atualizar() {
+      const cpf = document.getElementById("filtroCpf").value.toLowerCase();
+      const telefone = document.getElementById("filtroTelefone").value.toLowerCase();
+      const cidade = document.getElementById("filtroCidade").value.toLowerCase();
+      const bairro = document.getElementById("filtroBairro").value.toLowerCase();
+      const vaga = document.getElementById("filtroVaga").value.toLowerCase();
+      
+  const dias = parseInt(document.getElementById("filtroPeriodo").value);
+  const dataInicio = document.getElementById("dataInicio").value ? new Date(document.getElementById("dataInicio").value) : null;
+  const dataFim = document.getElementById("dataFim").value ? new Date(document.getElementById("dataFim").value + 'T23:59:59') : null;
+
+
+      const res = await fetch('https://raw.githubusercontent.com/PopularAtacarejo/VagasPopular/main/dados.json');
+      const dados = await res.json();
+      const hoje = new Date();
+
+      const filtrados = dados.filter(p => {
+        const data = new Date(p.data);
+        const diffDias = (hoje - data) / (1000 * 60 * 60 * 24);
+
+        return (
+          (!cpf || p.cpf?.toLowerCase().includes(cpf)) &&
+          (!telefone || p.telefone?.toLowerCase().includes(telefone)) &&
+          (!cidade || p.cidade?.toLowerCase().includes(cidade)) &&
+          (!bairro || p.bairro?.toLowerCase().includes(bairro)) &&
+          (!vaga || p.vaga?.toLowerCase() === vaga) &&
+          
+  (!dias || diffDias <= dias) &&
+  (!dataInicio || data >= dataInicio) &&
+  (!dataFim || data <= dataFim)
+
+        );
+      });
+
+      const tbody = document.querySelector("#tabelaCurriculos tbody");
+      tbody.innerHTML = "";
+
+      filtrados.forEach(p => {
+        const linha = document.createElement("tr");
+        linha.innerHTML = `
+          <td>${p.nome}</td>
+          <td>${p.cpf}</td>
+          <td>${p.telefone}</td>
+          <td>${p.cidade}</td>
+          <td>${p.bairro}</td>
+          <td>${p.vaga}</td>
+          <td>${new Date(p.data).toLocaleDateString()}</td>
+          <td><a href="https://github.com/PopularAtacarejo/VagasPopular/raw/main/curriculos/${p.arquivo}" target="_blank">Baixar</a></td>
+        `;
+        tbody.appendChild(linha);
+      });
+    }
+
+    
+window.onload = async function() {
+  const res = await fetch('https://raw.githubusercontent.com/PopularAtacarejo/VagasPopular/main/dados.json');
+  const dados = await res.json();
+
+  function preencherSelect(id, campo) {
+    const select = document.getElementById(id);
+    const opcoes = [...new Set(dados.map(d => d[campo]).filter(Boolean))].sort();
+    select.innerHTML = '<option value="">Todos</option>' + opcoes.map(v => `<option value="${v}">${v}</option>`).join('');
+  }
+
+  preencherSelect("filtroVaga", "vaga");
+  preencherSelect("filtroCidade", "cidade");
+  preencherSelect("filtroBairro", "bairro");
+  atualizar();
+};
+
+  </script>
+
+<canvas id="graficoVagas" width="600" height="300" style="display:block;margin:40px auto;"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function exportarExcel() {
+  const tabela = document.getElementById("tabelaCurriculos");
+  let csv = '';
+  for (let row of tabela.rows) {
+    const cols = Array.from(row.cells).map(col => `"${col.innerText}"`).join(";");
+    csv += cols + "\n";
+  }
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "curriculos.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function gerarGrafico(dados) {
+  const contagem = {};
+  dados.forEach(p => {
+    const v = p.vaga || "Outros";
+    contagem[v] = (contagem[v] || 0) + 1;
+  });
+  const ctx = document.getElementById("graficoVagas").getContext("2d");
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: Object.keys(contagem),
+      datasets: [{
+        label: "Currículos por Vaga",
+        data: Object.values(contagem),
+        backgroundColor: "#28a745"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+// Atualizar gráfico junto com tabela
+async function atualizar() {
+  const cpf = document.getElementById("filtroCpf").value.toLowerCase();
+  const telefone = document.getElementById("filtroTelefone").value.toLowerCase();
+  const cidade = document.getElementById("filtroCidade").value.toLowerCase();
+  const bairro = document.getElementById("filtroBairro").value.toLowerCase();
+  const vaga = document.getElementById("filtroVaga").value.toLowerCase();
+  
+  const dias = parseInt(document.getElementById("filtroPeriodo").value);
+  const dataInicio = document.getElementById("dataInicio").value ? new Date(document.getElementById("dataInicio").value) : null;
+  const dataFim = document.getElementById("dataFim").value ? new Date(document.getElementById("dataFim").value + 'T23:59:59') : null;
+
+  const res = await fetch('https://raw.githubusercontent.com/PopularAtacarejo/VagasPopular/main/dados.json');
+  const dados = await res.json();
+  const hoje = new Date();
+  const filtrados = dados.filter(p => {
+    const data = new Date(p.data);
+    const diffDias = (hoje - data) / (1000 * 60 * 60 * 24);
+    return (
+      (!cpf || p.cpf?.toLowerCase().includes(cpf)) &&
+      (!telefone || p.telefone?.toLowerCase().includes(telefone)) &&
+      (!cidade || p.cidade?.toLowerCase().includes(cidade)) &&
+      (!bairro || p.bairro?.toLowerCase().includes(bairro)) &&
+      (!vaga || p.vaga?.toLowerCase() === vaga) &&
+      
+  (!dias || diffDias <= dias) &&
+  (!dataInicio || data >= dataInicio) &&
+  (!dataFim || data <= dataFim)
+
+    );
+  });
+  const tbody = document.querySelector("#tabelaCurriculos tbody");
+  tbody.innerHTML = "";
+  filtrados.forEach(p => {
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td>${p.nome}</td>
+      <td>${p.cpf}</td>
+      <td>${p.telefone}</td>
+      <td>${p.cidade}</td>
+      <td>${p.bairro}</td>
+      <td>${p.vaga}</td>
+      <td>${new Date(p.data).toLocaleDateString()}</td>
+      <td><a href="https://github.com/PopularAtacarejo/VagasPopular/raw/main/curriculos/${p.arquivo}" target="_blank">Baixar</a></td>
+    `;
+    tbody.appendChild(linha);
+  });
+  gerarGrafico(filtrados);
+}
+</script>
+</body>
+
+</html>
